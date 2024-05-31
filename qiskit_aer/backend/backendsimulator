@@ -1,0 +1,94 @@
+from qiskit.providers.models import QasmBackendConfiguration
+from qiskit_aer import AerSimulator
+
+
+class CustomAerSimulator(AerSimulator):
+    def __init__(self, max_qubits=5, simulation_method='statevector'):
+        # Define basis gates and coupling map based on simulation method
+        if simulation_method == 'statevector':
+            basis_gates = ['u1', 'u2', 'u3', 'cx', 'id']
+            coupling_map = [[i, j] for i in range(max_qubits) for j in range(max_qubits) if i != j]
+        elif simulation_method == 'mps':
+            basis_gates = ['u1', 'u2', 'u3', 'cx', 'id']
+            coupling_map = [[i, j] for i in range(max_qubits) for j in range(max_qubits) if abs(i - j) == 1]
+        else:
+            # Default to statevector basis gates
+            basis_gates = ['u1', 'u2', 'u3', 'cx', 'id']
+            coupling_map = [[i, j] for i in range(max_qubits) for j in range(max_qubits) if i != j]
+
+        configuration = QasmBackendConfiguration(
+            backend_name='custom_aer_simulator',
+            backend_version='1.0.0',
+            n_qubits=max_qubits,
+            basis_gates=basis_gates,
+            gates=[],
+            local=True,
+            simulator=True,
+            conditional=False,
+            open_pulse=False,
+            memory=False,
+            max_shots=1024,
+            coupling_map=coupling_map,
+            description='Custom AerSimulator backend',
+            credits_required=False,
+            supported_instructions=['measure', 'reset', 'barrier'] + basis_gates,
+            dt=0.1,
+            dtm=0.1,
+            rep_times=[1],
+            meas_levels=[0, 1, 2],
+            qubit_lo_range=[(4.5, 5.5)] * max_qubits,
+            meas_lo_range=[(6.5, 7.5)] * max_qubits,
+            u_channel_lo=[],
+            meas_kernels=[],
+            discriminators=[],
+            hamiltonian={},
+            channel_bandwidth=[],
+            acquisition_latency=[],
+            conditional_latency=[],
+            meas_map=[[i] for i in range(max_qubits)],
+            max_experiments=1,
+            sample_name='',
+            n_registers=1,
+            n_uchannels=1,
+            memory_slot_size=1024,
+            supported_pulse_gates=[],
+            max_circuits=100,
+            parametric_pulses=[],
+            conditional_latency_schedule=[]
+        )
+        super().__init__(configuration)
+        self._max_qubits = max_qubits
+        self._simulation_method = simulation_method
+        self._custom_target = None
+
+    def properties(self):
+        # Include error rates, default pulse schedules, or other backend properties here
+        properties = {
+            'backend_version': self.configuration().backend_version,
+            'error_rates': {
+                'gate_errors': {'u1': 0.001, 'u2': 0.002, 'u3': 0.003, 'cx': 0.01},
+                'readout_errors': [0.1, 0.2, 0.3, 0.4]  # Example readout error rates for each qubit
+            },
+            # Add more properties as needed
+        }
+        return properties
+
+    def defaults(self):
+        # Include default pulse schedules or other backend properties here
+        defaults = {
+            'pulse_schedule': {
+                'u1': {'duration': 1000, 'amp': 0.5},  # Example default pulse schedule for u1 gate
+                'u2': {'duration': 2000, 'amp': 0.7},  # Example default pulse schedule for u2 gate
+                # Add more default pulse schedules for other gates as needed
+            },
+            # Add more defaults as needed
+        }
+        return defaults
+
+
+# Create an instance of CustomAerSimulator
+simulator = CustomAerSimulator()
+
+# Call properties() and defaults() methods and print their returned values
+print(simulator.properties())
+print(simulator.defaults())
